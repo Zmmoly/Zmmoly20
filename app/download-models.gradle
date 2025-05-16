@@ -1,0 +1,71 @@
+// تعريف مهمة لتنزيل نماذج التعلم الآلي
+task downloadMLModels {
+    doLast {
+        // تعريف مجلدات الوجهة
+        def mlDir = new File("${project.projectDir}/ml")
+        def assetsDir = new File("${project.projectDir}/src/main/assets")
+        def tempModelsDir = new File("${project.projectDir}/src/main/assets/temp_models")
+        
+        if (!mlDir.exists()) {
+            mlDir.mkdirs()
+        }
+        if (!assetsDir.exists()) {
+            assetsDir.mkdirs()
+        }
+        if (!tempModelsDir.exists()) {
+            tempModelsDir.mkdirs()
+        }
+
+        // تحديد روابط النماذج الحقيقية
+        def modelsMap = [
+            ["${mlDir}/model.tflite", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/model.tflite"],
+            ["${assetsDir}/arabic_dialect_model.tflite", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/arabic_dialect_model.tflite"],
+            ["${assetsDir}/logical_reasoning_model.tflite", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/logical_reasoning_model.tflite"],
+            ["${assetsDir}/medical_analyzer_model.tflite", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/medical_analyzer_model.tflite"],
+            ["${assetsDir}/voice_emotion_model.tflite", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/voice_emotion_model.tflite"],
+            ["${assetsDir}/labels.txt", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/labels.txt"],
+            
+            // نسخ إضافية في مجلد temp_models
+            ["${tempModelsDir}/arabic_dialect_model.tflite", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/arabic_dialect_model.tflite"],
+            ["${tempModelsDir}/logical_reasoning_model.tflite", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/logical_reasoning_model.tflite"],
+            ["${tempModelsDir}/medical_analyzer_model.tflite", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/medical_analyzer_model.tflite"],
+            ["${tempModelsDir}/voice_emotion_model.tflite", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/voice_emotion_model.tflite"],
+            ["${tempModelsDir}/labels.txt", "https://github.com/Zmmoly/zamouli-ai-assistant-520319/releases/download/assets-522032/labels.txt"]
+        ]
+
+        // تنزيل كل نموذج إذا لم يكن موجوداً
+        modelsMap.each { fileInfo ->
+            def fileName = fileInfo[0]
+            def fileUrl = fileInfo[1]
+            
+            def modelFile = new File(fileName)
+            def modelName = modelFile.getName()
+            
+            if (!modelFile.exists()) {
+                println "Downloading ${modelName} to ${fileName}"
+                
+                try {
+                    def connection = new URL(fileUrl).openConnection()
+                    connection.connect()
+                    
+                    modelFile.parentFile.mkdirs() // تأكد من وجود المجلد الأب
+                    
+                    modelFile.withOutputStream { out ->
+                        connection.inputStream.with { input ->
+                            out << input
+                        }
+                    }
+                    
+                    println "Downloaded ${modelName} successfully"
+                } catch (Exception e) {
+                    println "Error downloading ${modelName}: ${e.message}"
+                }
+            } else {
+                println "${fileName} already exists, skipping download"
+            }
+        }
+    }
+}
+
+// ربط المهمة بمرحلة التجميع
+preBuild.dependsOn downloadMLModels
